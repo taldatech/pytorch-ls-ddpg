@@ -13,9 +13,11 @@ from utils.srl_algorithms import ls_step
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
+import random
 
 
-ENV_ID = "MinitaurBulletEnv-v0"
+# ENV_ID = "MinitaurBulletEnv-v0"
+ENV_ID = "BipedalWalker-v2"
 GAMMA = 0.99
 BATCH_SIZE = 64
 LEARNING_RATE = 1e-4
@@ -23,9 +25,10 @@ REPLAY_SIZE = 100000
 REPLAY_INITIAL = 10000  # 10000
 N_DRL = 100000
 N_SRL = REPLAY_SIZE
+REWARD_TO_SOLVE = 300
 
 
-TEST_ITERS = 1000
+TEST_ITERS = 10000  # 1000 for Minitaur
 
 
 def test_net(net, env, count=10, device="cpu"):
@@ -51,10 +54,14 @@ if __name__ == "__main__":
     # parser.add_argument("--cuda", default=False, action='store_true', help='Enable CUDA')
     # parser.add_argument("-n", "--name", required=True, help="Name of the run")
     # args = parser.parse_args()
-    use_ls_ddpg = True
+    training_random_seed = 2019
+    use_constant_seed = True  # to compare performance independently of the randomness
+    use_ls_ddpg = False
     use_boosting = False
-    lam = 1  # regularization parameter
+    lam = 100  # regularization parameter
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    env = gym.make(ENV_ID)
+    test_env = gym.make(ENV_ID)
     name = "agent_" + ENV_ID
     if use_ls_ddpg:
         print("using LS-DDPG")
@@ -62,14 +69,22 @@ if __name__ == "__main__":
     if use_boosting:
         print("using boosting")
         name += "-BOOSTING"
+    if use_constant_seed:
+        name += "-SEED-" + str(training_random_seed)
+        np.random.seed(training_random_seed)
+        random.seed(training_random_seed)
+        env.seed(training_random_seed)
+        test_env.seed(training_random_seed)
+        torch.manual_seed(training_random_seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(training_random_seed)
+        print("training using constant seed of ", training_random_seed)
     name += "-BATCH-" + str(BATCH_SIZE)
     save_path = os.path.join("saves", "ddpg-" + name)
     os.makedirs(save_path, exist_ok=True)
     ckpt_save_path = './agent_ckpt/' + name + ".pth"
     if not os.path.exists('./agent_ckpt/'):
         os.makedirs('./agent_ckpt')
-    env = gym.make(ENV_ID)
-    test_env = gym.make(ENV_ID)
 
     act_net = agent_model.DDPGActor(env.observation_space.shape[0], env.action_space.shape[0]).to(device)
     crt_net = agent_model.DDPGCritic(env.observation_space.shape[0], env.action_space.shape[0]).to(device)
@@ -99,7 +114,12 @@ if __name__ == "__main__":
                 if rewards_steps:
                     rewards, steps = zip(*rewards_steps)
                     tb_tracker.track("episode_steps", steps[0], frame_idx)
-                    tracker.reward(rewards[0], frame_idx)
+                    mean_reward = tracker.reward(rewards[0], frame_idx)
+                    if mean_reward is not None and mean_reward > REWARD_TO_SOLVE:
+                        print("environment solved in % steps" % frame_idx, " (% episodes)" % len(tracker.total_rewards))
+                        utils.save_agent_state(act_net, crt_net, [act_opt, crt_opt], frame_idx,
+                                               len(tracker.total_rewards), path=ckpt_save_path)
+                        break
 
                 if len(buffer) < REPLAY_INITIAL:
                     continue
