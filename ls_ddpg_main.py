@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
                     if frame_idx % test_iter == 0:
                         ts = time.time()
-                        rewards, steps = test_net(act_net, test_env, device=device)
+                        rewards, steps = test_net(act_net, test_env, agent_model, device=device)
                         print("Test done in %.2f sec, reward %.3f, steps %d" % (
                             time.time() - ts, rewards, steps))
                         writer.add_scalar("test_reward", rewards, frame_idx)

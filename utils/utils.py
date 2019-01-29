@@ -14,7 +14,7 @@ import os
 from utils.nn_agent_models import float32_preprocessor
 
 
-def test_net(net, env, count=10, device="cpu"):
+def test_net(net, env, agent_model, count=10, device="cpu"):
     rewards = 0.0
     steps = 0
     for _ in range(count):

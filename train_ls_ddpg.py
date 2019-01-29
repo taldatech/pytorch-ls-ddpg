@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     training_random_seed = 2019
     use_constant_seed = True  # to compare performance independently of the randomness
-    use_ls_ddpg = False
+    use_ls_ddpg = True
     use_boosting = False
     lam = 10  # regularization parameter
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
                 if frame_idx % TEST_ITERS == 0:
                     ts = time.time()
-                    rewards, steps = test_net(act_net, test_env, device=device)
+                    rewards, steps = test_net(act_net, test_env, agent_model, device=device)
                     print("Test done in %.2f sec, reward %.3f, steps %d" % (
                         time.time() - ts, rewards, steps))
                     writer.add_scalar("test_reward", rewards, frame_idx)
