@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import gym
 import pybullet_envs
@@ -8,7 +7,8 @@ import utils.nn_agent_models as agent_model
 import numpy as np
 import torch
 
-ENV_ID = "MinitaurBulletEnv-v0"
+# ENV_ID = "MinitaurBulletEnv-v0"
+ENV_ID = "BipedalWalker-v2"
 
 
 if __name__ == "__main__":
@@ -17,9 +17,10 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--env", default=ENV_ID, help="Environment name to use, default=" + ENV_ID)
     parser.add_argument("-r", "--record", help="If specified, sets the recording dir, default=Disabled")
     args = parser.parse_args()
-
+    render = True
     spec = gym.envs.registry.spec(args.env)
-    spec._kwargs['render'] = True
+    if spec._kwargs.get('render') and render:
+        spec._kwargs['render'] = True
     env = gym.make(args.env)
     if args.record:
         env = gym.wrappers.Monitor(env, args.record)
@@ -38,6 +39,9 @@ if __name__ == "__main__":
         obs, reward, done, _ = env.step(action)
         total_reward += reward
         total_steps += 1
+        if render:
+            env.render()
         if done:
+            env.close()
             break
     print("In %d steps we got %.3f reward" % (total_steps, total_reward))

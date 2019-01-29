@@ -129,10 +129,12 @@ class DDPGCritic(nn.Module):
 
 class AgentDDPG(BaseAgent):
     """
-    Agent implementing Orstein-Uhlenbeck exploration process
+    Agent implementing Orstein-Uhlenbeck exploration process.
+    # Implemented noise decaying for convergence
     """
 
-    def __init__(self, net, device="cpu", ou_enabled=True, ou_mu=0.0, ou_teta=0.15, ou_sigma=0.2, ou_epsilon=1.0):
+    def __init__(self, net, device="cpu", ou_enabled=True, ou_mu=0.0, ou_teta=0.15, ou_sigma=0.2, ou_epsilon=1.0,
+                 ou_decay_steps=500000, ou_epsilon_end=0.01, use_decaying_noise=True):
         self.net = net
         self.device = device
         self.ou_enabled = ou_enabled
@@ -140,6 +142,10 @@ class AgentDDPG(BaseAgent):
         self.ou_teta = ou_teta
         self.ou_sigma = ou_sigma
         self.ou_epsilon = ou_epsilon
+        self.ou_decay_steps = ou_decay_steps
+        self.ou_epsilon_end = ou_epsilon_end
+        self.use_decaying_noise = use_decaying_noise
+        self.num_agent_calls = 0
 
     def initial_state(self):
         return None
@@ -158,11 +164,15 @@ class AgentDDPG(BaseAgent):
                     a_state = np.zeros(shape=action.shape, dtype=np.float32)
                 a_state += self.ou_teta * (self.ou_mu - a_state)
                 a_state += self.ou_sigma * np.random.normal(size=action.shape)
-
-                action += self.ou_epsilon * a_state
+                if self.use_decaying_noise:
+                    epsilon = max(self.ou_epsilon_end, self.ou_epsilon - self.num_agent_calls / self.ou_decay_steps)
+                else:
+                    epsilon = self.ou_epsilon
+                action += epsilon * a_state
                 new_a_states.append(a_state)
         else:
             new_a_states = agent_states
 
+        self.num_agent_calls += 1
         actions = np.clip(actions, -1, 1)
         return actions, new_a_states

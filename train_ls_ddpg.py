@@ -14,13 +14,14 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import random
-
+from utils.utils import test_net
 
 # ENV_ID = "MinitaurBulletEnv-v0"
 ENV_ID = "BipedalWalker-v2"
 GAMMA = 0.99
 BATCH_SIZE = 64
-LEARNING_RATE = 1e-4
+LEARNING_RATE_ACTOR = 0.0001
+LEARNING_RATE_CRITIC = 0.0001
 REPLAY_SIZE = 100000
 REPLAY_INITIAL = 10000  # 10000
 N_DRL = 100000
@@ -28,25 +29,7 @@ N_SRL = REPLAY_SIZE
 REWARD_TO_SOLVE = 300
 
 
-TEST_ITERS = 10000  # 1000 for Minitaur
-
-
-def test_net(net, env, count=10, device="cpu"):
-    rewards = 0.0
-    steps = 0
-    for _ in range(count):
-        obs = env.reset()
-        while True:
-            obs_v = agent_model.float32_preprocessor([obs]).to(device)
-            mu_v = net(obs_v)
-            action = mu_v.squeeze(dim=0).data.cpu().numpy()
-            action = np.clip(action, -1, 1)
-            obs, reward, done, _ = env.step(action)
-            rewards += reward
-            steps += 1
-            if done:
-                break
-    return rewards / count, steps / count
+TEST_ITERS = 10000  # 1000 for Minitaure
 
 
 if __name__ == "__main__":
@@ -58,7 +41,7 @@ if __name__ == "__main__":
     use_constant_seed = True  # to compare performance independently of the randomness
     use_ls_ddpg = False
     use_boosting = False
-    lam = 100  # regularization parameter
+    lam = 10  # regularization parameter
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     env = gym.make(ENV_ID)
     test_env = gym.make(ENV_ID)
@@ -97,8 +80,8 @@ if __name__ == "__main__":
     agent = agent_model.AgentDDPG(act_net, device=device)
     exp_source = Experience.ExperienceSourceFirstLast(env, agent, gamma=GAMMA, steps_count=1)
     buffer = Experience.ExperienceReplayBuffer(exp_source, buffer_size=REPLAY_SIZE)
-    act_opt = optim.Adam(act_net.parameters(), lr=LEARNING_RATE)
-    crt_opt = optim.Adam(crt_net.parameters(), lr=LEARNING_RATE)
+    act_opt = optim.Adam(act_net.parameters(), lr=LEARNING_RATE_ACTOR)
+    crt_opt = optim.Adam(crt_net.parameters(), lr=LEARNING_RATE_CRITIC)
 
     utils.load_agent_state(act_net, crt_net, [act_opt, crt_opt], path=ckpt_save_path)
 

@@ -14,6 +14,24 @@ import os
 from utils.nn_agent_models import float32_preprocessor
 
 
+def test_net(net, env, count=10, device="cpu"):
+    rewards = 0.0
+    steps = 0
+    for _ in range(count):
+        obs = env.reset()
+        while True:
+            obs_v = agent_model.float32_preprocessor([obs]).to(device)
+            mu_v = net(obs_v)
+            action = mu_v.squeeze(dim=0).data.cpu().numpy()
+            action = np.clip(action, -1, 1)
+            obs, reward, done, _ = env.step(action)
+            rewards += reward
+            steps += 1
+            if done:
+                break
+    return rewards / count, steps / count
+
+
 def save_agent_state(act_net, crt_net, optimizers, frame, games, save_replay=False, replay_buffer=None, name='',
                      path=None):
     """
