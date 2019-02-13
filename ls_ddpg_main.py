@@ -89,10 +89,16 @@ if __name__ == "__main__":
             model_name = ''
         if args.decay_rate:
             decay_rate = args.decay_rate
+        else:
+            decay_rate = None
         if args.lr_actor:
             lr_actor = args.lr_actor
+        else:
+            lr_actor = 0.0001
         if args.lr_critic:
             lr_critic = args.lr_critic
+        else:
+            lr_critic = 0.0001
         if args.lam:
             lam = args.lam
         if args.gamma:
@@ -273,7 +279,18 @@ if __name__ == "__main__":
         if spec._kwargs.get('render') and render:
             spec._kwargs['render'] = True
         env = gym.make(args.env)
+        use_constant_seed = True
+        seed = 2019
+        if use_constant_seed:
+            np.random.seed(seed)
+            random.seed(seed)
+            env.seed(seed)
+            torch.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(seed)
+            print("seed set to ", seed)
         if args.record:
+            # pass
             env = gym.wrappers.Monitor(env, args.record)
 
         net = agent_model.DDPGActor(env.observation_space.shape[0], env.action_space.shape[0])
