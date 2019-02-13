@@ -1,3 +1,4 @@
+# pytorch-ls-ddpg
 PyTorch Implementation of Least-Squares Deep Deterministic Policy Gradients
 
 Based on the paper:
@@ -16,14 +17,15 @@ Video:
 
 [LS-DQN](https://github.com/taldatech/pytorch-ls-dqn) - https://github.com/taldatech/pytorch-ls-dqn
 
-- [Background](#background)
-- [Prerequisites](#prerequisites)
-- [Files in the repository](#files-in-the-repository)
-- [API (`ls_ddpg_main.py --help`)](#api---ls-ddpg-main.py---help--)
-- [Playing](#playing)
-- [Training](#training)
-- [TensorBoard](#tensorboard)
-- [References](#references)
+- [pytorch-ls-ddpg](#pytorch-ls-ddpg)
+  * [Background](#background)
+  * [Prerequisites](#prerequisites)
+  * [Files in the repository](#files-in-the-repository)
+  * [API (`ls_ddpg_main.py --help`)](#api---ls-ddpg-mainpy---help--)
+  * [Playing](#playing)
+  * [Training](#training)
+  * [TensorBoard](#tensorboard)
+  * [References](#references)
 
 ## Background
 The idea of this algorithm is to combine between Deep RL (DRL) to Shallow RL (SRL), where in this case, we use Deep Deterministic Policy Gradient (DDPG) as the DRL algorithm and
